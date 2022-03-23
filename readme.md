@@ -1,5 +1,5 @@
 
-<img src="banner.png" />
+<img src="Level.png" />
 
 # vUSDC - Omni-Chain Vault
 ERC4626 compliant vault for earning yield on USDC.
