@@ -1,7 +1,7 @@
-# vUSDC - Omni-Chain Vault
+
 <img src="banner.png" />
 
-## Description 
+# vUSDC - Omni-Chain Vault
 ERC4626 compliant vault for earning yield on USDC.
 ## Getting Started
 ```
