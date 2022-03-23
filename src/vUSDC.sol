@@ -35,6 +35,7 @@ contract vUSDC is ERC4626, Ownable{
     address public router;
     //deposit fee
     uint256 public fee;
+
         constructor(
         ERC20 _underlying, ERC20 _poolToken, ERC20 _stgToken, address _router,
         address _stg, address _feeCollector, uint8 _pID, uint256 _fee) ERC4626(_underlying, "USDC Vault", "vUSDC"){
@@ -58,7 +59,9 @@ contract vUSDC is ERC4626, Ownable{
         assets -= _fee;
         shares = convertToShares(assets);
         uint256 balance = convertToShares(assets - _fee);
+        UNDERLYING.approve(router, assets);
         IRouter(router).addLiquidity(pID, assets, msg.sender);
+        POOLTOKEN.approve(stargate, assets);
         IStargate(stargate).deposit(pID, assets);
         if(user.balance > 0){
             uint256 pending =  user.balance.mulWadDown(stgPS()) - user.rewardDebt;
