@@ -18,51 +18,50 @@ contract vUSDC is ERC4626, Ownable{
         uint256 rewardDebt;
     }
     //usdc
-    ERC20 public immutable UNDERLYING;
+    ERC20 public UNDERLYING;
     //pUSDC
-    ERC20 public immutable POOLTOKEN;
+    ERC20 public POOLTOKEN;
     //stg rewards
-    ERC20 public immutable STG;
+    ERC20 public STG;
     //stg contract, import interface
-    address public immutable stargate;
+    address public staker;
     //fee collector
-    address public immutable feeCollector;
+    address public  feeCollector;
     //stargate pool ID (usd = 1)
-    uint8 public pID;
+    uint256 public pID;
+    //stargate pool ID (usd = 0)
+    uint256 public spID;
     //user info for rewards
     mapping(address => userInfo) public _userInfo;
     //router
     address public router;
     //deposit fee
     uint256 public fee;
-
-        constructor(
-        ERC20 _underlying, ERC20 _poolToken, ERC20 _stgToken, address _router,
-        address _stg, address _feeCollector, uint8 _pID, uint256 _fee) ERC4626(_underlying, "USDC Vault", "vUSDC"){
-        UNDERLYING = _underlying;
-        POOLTOKEN = _poolToken;
-         stargate = _stg;
-        STG = _stgToken;
-        router = _router;
-        feeCollector = _feeCollector;
-        pID = _pID;
-        fee = _fee;
+    // address public _owner;
+   
+    constructor(ERC20 _asset) ERC4626(_asset, "vault", "vUSDC") {
+        UNDERLYING = _asset;
     }
+    // constructor(ERC20 asset) ERC4626(_underlying,  "vault",  "vUSD"){
+    //     UNDERLYING = _underlying;
+    //     _owner = msg.sender;
+
+    // }
     function totalAssets() public view virtual override returns (uint256){
-        return UNDERLYING.balanceOf(address(this)) + UNDERLYING.balanceOf(stargate);
+        return UNDERLYING.balanceOf(address(this)) + UNDERLYING.balanceOf(staker);
     }
 
     function afterDeposit(uint256 assets, uint256 shares)internal virtual override {
         userInfo storage user = _userInfo[msg.sender];
         uint256 _fee = assets.mulWadDown(fee);
-        asset.transferFrom(msg.sender, feeCollector, _fee);
+        UNDERLYING.transferFrom(msg.sender, feeCollector, _fee);
         assets -= _fee;
         shares = convertToShares(assets);
         uint256 balance = convertToShares(assets - _fee);
         UNDERLYING.approve(router, assets);
         IRouter(router).addLiquidity(pID, assets, msg.sender);
-        POOLTOKEN.approve(stargate, assets);
-        IStargate(stargate).deposit(pID, assets);
+        POOLTOKEN.approve(staker, assets);
+        IStargate(staker).deposit(pID, assets);
         if(user.balance > 0){
             uint256 pending =  user.balance.mulWadDown(stgPS()) - user.rewardDebt;
             STG.transferFrom(address(this), msg.sender, pending);
@@ -76,7 +75,7 @@ contract vUSDC is ERC4626, Ownable{
         return rate;
     }
     function beforeWithdraw(uint256 assets, uint256 shares)internal virtual override {
-        IStargate(stargate).withdraw(pID, assets);
+        IStargate(staker).withdraw(pID, assets);
         IRouter(router).instantRedeemLocal(pID, assets, msg.sender);
         userInfo storage user = _userInfo[msg.sender];
         uint256 pending =  user.balance.mulWadDown(stgPS()) - user.rewardDebt;
@@ -88,9 +87,25 @@ contract vUSDC is ERC4626, Ownable{
     function setFee(uint256 _fee)public onlyOwner{
         fee = _fee;
     }
-    function setPID(uint8 _pID)public onlyOwner{
+    function setPID(uint256 _pID)public onlyOwner{
         pID = _pID;
     }
-    
-    
+    function setsPID(uint256 _spID)public onlyOwner{
+        spID = _spID;
+    }
+    function setPoolToken(ERC20 _poolToken)public onlyOwner{
+        POOLTOKEN = _poolToken;
+    }
+    function setStaker(address _staker)public onlyOwner{
+        staker = _staker;
+    }
+    function setSTG(ERC20 _stg)public onlyOwner{
+        STG = _stg;
+    }
+    function setFeeCollector(address _feeCollector)public onlyOwner{
+        feeCollector = _feeCollector;
+    }
+    function setRouter(address _router)public onlyOwner{
+        router = _router;
+    }
 }
