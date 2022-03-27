@@ -12,16 +12,12 @@ import {IRouter} from "./interfaces/IRouter.sol";
 contract vUSDC is ERC4626, Ownable{
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
-    // user info stores reward debt and balance of shares
-    struct userInfo{
-        uint256 balance;
-        uint256 rewardDebt;
-    }
+
     //usdc
     ERC20 public UNDERLYING;
     //pUSDC
     ERC20 public POOLTOKEN;
-    //stg rewards
+    //stg token
     ERC20 public STG;
     //stg contract, import interface
     IStargate public staker;
@@ -31,15 +27,11 @@ contract vUSDC is ERC4626, Ownable{
     uint256 public pID;
     //stargate pool ID (usd = 0)
     uint256 public spID;
-    //user info for rewards
-    mapping(address => userInfo) public _userInfo;
     //router
     IRouter public router;
     //deposit fee
     uint256 public fee;
-    // address public _owner;
     uint256 public _stgBal;
-
     uint256 public lpBal;
     address public gov;
     constructor(address _underlying, string memory name, string memory symbol, address _router, address _staker, ERC20 _pooltoken) ERC4626(ERC20(_underlying), name, symbol){
@@ -50,14 +42,6 @@ contract vUSDC is ERC4626, Ownable{
         UNDERLYING.approve(address(router), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         POOLTOKEN.approve(address(staker), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     }
-    // constructor(ERC20 _asset) ERC4626(_asset, "vault", "vUSDC") {
-    //     UNDERLYING = _asset;
-    // }
-    // constructor(ERC20 asset) ERC4626(_underlying,  "vault",  "vUSD"){
-    //     UNDERLYING = _underlying;
-    //     _owner = msg.sender;
-
-    // }
     function totalAssets() public view virtual override returns (uint256){
         return UNDERLYING.balanceOf(address(this)) + value();
     }
@@ -81,45 +65,12 @@ contract vUSDC is ERC4626, Ownable{
         lpBal += _lpBal;
         POOLTOKEN.approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         stake();
-        // UNDERLYING.allowance(address(this), address(this));
-        // STG.allowance(address(this), address(this));
-        // POOLTOKEN.allowance(address(this), address(this));
-        // ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(address(staker), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-        // userInfo storage user = _userInfo[msg.sender];
-        // uint256 _fee = assets.mulWadDown(fee);
-        // UNDERLYING.transferFrom(msg.sender, feeCollector, _fee);
-        // assets -= _fee;
-        // shares = convertToShares(assets);
-        // uint256 balance = convertToShares(assets - _fee );
-        
-        // POOLTOKEN.approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-        // uint256 _bal = POOLTOKEN.balanceOf(address(this));
-        // staker.deposit(0, _bal);
-        
     }
-        // _stgBal = ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(this));
-
-        // if(user.balance > 0){
-        //     uint256 pending =  user.balance.mulWadDown(stgPS()) - user.rewardDebt;
-        //     STG.transferFrom(address(this), msg.sender, pending);
-        //     }
-        // user.balance += shares;
-        // user.rewardDebt = user.balance.mulWadDown(stgPS());
 
     function stake() public {
         uint256 _bal = POOLTOKEN.balanceOf(address(this));
         staker.deposit(0, _bal);
         _stgBal = ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(this));
-    }
-    function stgPS() internal view returns (uint256) {
-        uint256 rate = STG.balanceOf(address(this)).mulDivDown(1e12, totalSupply);
-        return rate;
-    }
-    function ptBal() public view returns (uint256) {
-        return STG.balanceOf(address(this));
-    }
-    function recFee() public view returns onlyGov (uint256) {
-        return fee;
     }
     function beforeWithdraw(uint256 assets, uint256 shares)internal virtual override {
         uint256 _amount = lpPerShare().mulDivDown(shares, 1e12);
@@ -131,14 +82,6 @@ contract vUSDC is ERC4626, Ownable{
         uint256 priorBal = UNDERLYING.balanceOf(address(this));
         IRouter(router).instantRedeemLocal(pID, _amt, address(this));
         uint256 newBal = UNDERLYING.balanceOf(address(this));
-        // uint256 _want = priorBal - newBal;
-        //design new contract for strategy. makes deposit logic easier. 
-        // userInfo storage user = _userInfo[msg.sender];
-        // uint256 pending =  user.balance.mulWadDown(stgPS()) - user.rewardDebt;
-        // STG.transferFrom(address(this), msg.sender, pending);
-        // STG.transferFrom(address(this), msg.sender, ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(this)));
-        // user.balance -= shares;
-        // user.rewardDebt = user.balance.mulWadDown(stgPS());
     }
     function setFee(uint256 _fee)public onlyOwner{
         fee = _fee;
@@ -165,7 +108,7 @@ contract vUSDC is ERC4626, Ownable{
         router = IRouter(_router);
     }
     modifier onlyGov {
-        if(msg.sender != gov) throw;
+        if(msg.sender != gov) revert();
         _;
     }
     function setGov(address _gov)public onlyOwner{
