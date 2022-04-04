@@ -36,6 +36,7 @@ contract vUSDCtest is DSTest, ERC20TokenFaker {
     ERC20 UNDERLYING;
     // CheatCodes constant cheats = CheatCodes(HEVM_ADDRESS);
      Vm constant vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+    //  event log(string);
     
 
 
@@ -51,7 +52,7 @@ function setUp() public {
     
     // vusd.setStaker(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b);
     // vusd.setRouter(0x8731d54E9D02c286767d56ac03e8037C07e01e98);
-    // vusd.setSTG(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6));
+    vusd.setSTG(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6));
     vusd.setsPID(0);
     vusd.setPID(1);
     // ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).approve(address(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
@@ -61,19 +62,21 @@ function setUp() public {
     ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    // ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).allowance(address(vusd), address(vusd));
+    ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     // ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).allowance(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b, 0xB0D502E938ed5f4df2E681fE6E419ff29631d62b);
-    // vusd.deposit(1000000, address(this));
+    vusd.deposit(1000000000, address(this));
+    // ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
 }
 // function testInitialBalance() public {
 //     assertEq(0, vusd.balanceOf(address(this)));
 // }
 // test whole deposit flow
-function testDeposit() public {
-    vusd.deposit(100000000, address(this));
-    //  assert(vusd.balanceOf(address(this)) > 1);
-    assert(ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).balanceOf(address(vusd)) == 0 && vusd.balanceOf(address(this)) > 0);
-}
+// function testDeposit() public {
+//     vusd.deposit(1000000, address(this));
+//     //  assert(vusd.balanceOf(address(this)) > 1);
+//     assert(vusd.balanceOf(address(this))  > 0);
+//     emit log("deposit");
+// }
 
 
 // test just reciept of LP tokens (comment out stake)
@@ -85,47 +88,49 @@ function testDeposit() public {
 //     assert(ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).balanceOf(address(vusd)) >= 1);
 // }
 // // test reciept of stg tokens on deposit fast forward
-function testStg() public {
-    // vm.prank(address(1));
-   
-    // ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+// function testStg() public {
+//     vusd.deposit(1000, address(this));
+//     vm.roll(14446759);
+//     vusd.deposit(1000, address(this));
+//    assert(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(vusd)) > 0);
+// }
+//change withdraw logic so assets are representing staked balance
+function testWithdraw() public {
     
-    // ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    // fakeUSDC._setBalance(address(1), 1e18);
-    // uint256 _time = block.timestamp + 90480;
-    // cheats.deal(address(this), 1e18);
-
-    vusd.deposit(1000000000000, address(this));
-    vusd.stake();
-    // assert(vusd.balanceOf(address(this)) > 1);
-    // vm.warp(7 days);
     // vusd.deposit(10000, address(this));
-    vm.roll(14446759);
-    vusd.deposit(1000, address(this));
-    vusd.stake();
-   assert(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(vusd)) > 0);
-    // IStargate(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b).deposit(10 , ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).balanceOf(address(this)));
+    // ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+    // // vusd._owner = address(this);
+    // // vusd.deposit(1000000, address(this));
+    // // emit log("deposit");
+    // // vm.roll(14446760);
+    // // uint256 balancePrior = vusd.balanceOf(address(this));
+    // // uint256 _bbal = vusd.lpBal();
+    // vm.roll(14446760);
+    
+    vusd.withdraw(10000000, address(this), address(this));
+    emit log("withdraw");
+    // assert(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(this)) != 0);
+    // vm.roll(14446761);
+    // uint256 balanceNow = vusd.balanceOf(address(this));
+    // assert(balancePrior > balanceNow);
+}
+function testLPStats() public {
+    assert(vusd.lpStats() >0);
+}
+
+  // IStargate(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b).deposit(10 , ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).balanceOf(address(this)));
     // vm.roll(14446769);
     // vm.roll(14446760);
     // assert(vusd.ptBal() > 1);
     // uint256 b = vusd._stgBal();
     // assert(b != 0);
-}
-//change withdraw logic so assets are representing staked balance
-function testWithdraw() public {
-    vusd.deposit(100000000, address(this));
-    
-    vm.roll(14446759);
-    vusd.withdraw(10, address(this), address(vusd));
-    
-}
-function testWarp() public {
-    uint256 then = block.timestamp;
-    // vm.warp(1 days);
-    vm.roll(14446759);
-    uint256 _now = block.timestamp;
-    assert(_now > then);
-}
+// function testWarp() public {
+//     uint256 then = block.timestamp;
+//     // vm.warp(1 days);
+//     vm.roll(14446759);
+//     uint256 _now = block.timestamp;
+//     assert(_now > then);
+// }
 
 
 
