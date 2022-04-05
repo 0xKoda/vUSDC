@@ -7,13 +7,14 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {Ownable} from "openzeppelin/access/Ownable.sol";
 import {IRouter} from "./interfaces/IRouter.sol";
+import {IAsset, IBalancer} from "./interfaces/IBalancer.sol";
 // import {ERC20} from "openzeppelin/token/ERC20/ERC20.sol";
 
 
 contract vUSDC is ERC4626, Ownable{
     using FixedPointMathLib for uint256;
-
-
+    event balancerSwap(uint256 _amt);
+    event staked(uint256 _amt);
 
     //usdc
     ERC20 public UNDERLYING;
@@ -38,6 +39,8 @@ contract vUSDC is ERC4626, Ownable{
     address public gov;
     uint256 public base_uint;
     uint256 public _bla;
+    bytes32 public _balancerPool =
+        0x3a4c6d2404b5eb14915041e01f63200a82f4a343000200000000000000000065;
     
     constructor(address _underlying, string memory name, string memory symbol, address _router, address _staker, ERC20 _pooltoken) ERC4626(ERC20(_underlying), name, symbol){
         UNDERLYING = ERC20(_underlying);
@@ -47,7 +50,7 @@ contract vUSDC is ERC4626, Ownable{
         UNDERLYING.approve(address(router), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         POOLTOKEN.approve(address(staker), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         base_uint = 1000;
-        ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).allowance(address(this), address(msg.sender));
+        ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).allowance(address(this), address(msg.sender));
         UNDERLYING.allowance(address(this), address(router));
         POOLTOKEN.allowance(address(this), address(router));
     }
@@ -55,39 +58,31 @@ contract vUSDC is ERC4626, Ownable{
          return value();
         
     }
+    // $ per LP token
     function lpStats() public view virtual returns (uint256){
         uint256 sup= POOLTOKEN.totalSupply();
         uint256 bal = UNDERLYING.balanceOf(address(POOLTOKEN));
         return bal.divWadDown(sup);
-        // return bal.mulDivDown(base_uint, sup);
-        // $ per token
     }
     function value() public view returns(uint256) {
-       return  lpBal;
+       return  lpBal.mulWadDown(lpStats());
     }
     function lpPerShare() public view returns(uint256) {
         return lpBal.divWadDown(totalSupply);
     }
 
-    //swap on balancer stg for more USDC
-    //Swap (Bytes32, Uint8, Address, Address, Uint256, Bytes, Address, Bool, Address, Bool, Uint256, Uint256)
-
     function afterDeposit(uint256 assets, uint256 shares)internal virtual override {
-        // userInfo storage user = _userInfo[msg.sender];
         UNDERLYING.approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         UNDERLYING.approve(address(router), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-        
         POOLTOKEN.approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         POOLTOKEN.approve(address(router), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         POOLTOKEN.approve(address(staker), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         router.addLiquidity(1, assets, address(this));
         increment();
         stake();
-        // _userInfo[msg.sender].balance += shares;
-        // _userInfo[msg.sender].rewardDebt = _userInfo[msg.sender].balance.mulWadDown(stgPS());
     }
     function increment() internal returns(uint256){
-        uint256 _lpBal = ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).balanceOf(address(this));
+        uint256 _lpBal = ERC20(0x892785f33CdeE22A30AEF750F285E18c18040c3e).balanceOf(address(this));
         lpBal += _lpBal;
         return lpBal;
     }
@@ -95,7 +90,7 @@ contract vUSDC is ERC4626, Ownable{
     function stake() public {
         uint256 _bal = POOLTOKEN.balanceOf(address(this));
         staker.deposit(0, _bal);
-        _stgBal = ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(this));
+        _stgBal = ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).balanceOf(address(this));
     }
      function stgPS() internal view returns (uint256) {
          if (_stgBal == 0) {
@@ -108,38 +103,12 @@ contract vUSDC is ERC4626, Ownable{
         UNDERLYING.approve(address(router), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         POOLTOKEN.approve(address(router), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         POOLTOKEN.approve(0x0000000000000000000000000000000000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-        //lp balance / total upply
-        // uint256 want = lpBal.divWadDown(totalSupply);
-        // uint256 thisWant = want.mulWadDown(shares);
-        // STG.allowance(address(this), address(msg.sender));
-        // uint256 lpWant = lpPerShare().mulWadDown(shares);
-        //  uint256 lpWant = lpBal.mulDivDown(totalSupply, shares);
-        // IStargate(staker).withdraw(0, lpWant);
-        // uint256 pending =  _userInfo[msg.sender].balance.mulWadDown(stgPS());
-        // uint256 left = pending;
-        // STG.transfer(msg.sender, left);
         uint256 lpWant = lpBal.divWadDown(totalSupply).mulWadDown(shares);
-        // _userInfo[msg.sender].balance -= shares;
-        // _userInfo[msg.sender].rewardDebt = _userInfo[msg.sender].balance.mulWadDown(stgPS());
-        // uint256 _amount = assetsToLp(assets);
-        // uint256 lpps = lpBal.mulDivDown(1e12, totalSupply);
-        // uint256 _amt = lpps.mulWadDown(shares);
-        //fix this, asstes count should be staked balance
-        // uint256 prior = POOLTOKEN.balanceOf(address(this));
         IStargate(staker).withdraw(0, lpWant);
-        // uint256 _after = POOLTOKEN.balanceOf(address(this));
-        // uint256 _amt = _after - prior;
-        // uint256 priorBal = UNDERLYING.balanceOf(address(this));
-        // IPoolToken(POOLTOKEN).instantRedeemLocal(lpWant);
-         router.instantRedeemLocal(1, lpWant, address(this));
-        require(UNDERLYING.balanceOf(address(this)) > 1);
-        // lpBal -= lpWant;
-        
-        
-        // lpBal -= lpWant;
-        // uint256 newBal = UNDERLYING.balanceOf(address(this));
-        // require( newBal - priorBal >= _amt);
+        router.instantRedeemLocal(1, lpWant, address(this));
+        // require(UNDERLYING.balanceOf(address(this)) > 0, "no underlying");
     }
+
     function assetsToLp(uint256 assets) public view returns(uint256){
         return assets.divWadDown(lpStats());
     }
@@ -174,5 +143,43 @@ contract vUSDC is ERC4626, Ownable{
     function setGov(address _gov)public onlyOwner{
         gov = _gov;
     }
+    //swap on balancer stg for more USDC, add liquidity, stake.
+    function compound() public onlyOwner{
+        uint256 _stg = STG.balanceOf(address(this));
+        ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).approve(0xBA12222222228d8Ba445958a75a0704d566BF2C8, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+        if(_stg > 10){
+         IBalancer.SingleSwap memory swapParams = IBalancer
+            .SingleSwap({
+            poolId: _balancerPool,
+            kind: IBalancer.SwapKind.GIVEN_IN,
+            //STG token
+            assetIn: IAsset(0x6694340fc020c5E6B96567843da2df01b2CE1eb6),
+            //USDC
+            assetOut: IAsset(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8),
+            amount: _stg,
+            userData: "0x"
+         });
+        IBalancer.FundManagement memory funds = IBalancer
+        .FundManagement({
+            sender: address(this),
+            recipient: payable(address(this)),
+            fromInternalBalance: false,
+            toInternalBalance: false
+        });
+    // perform swap
+    IBalancer(0xBA12222222228d8Ba445958a75a0704d566BF2C8).swap(swapParams, funds, 1, block.timestamp + 60);
+    emit balancerSwap(_stg);
+    uint256 _underlying = ERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8).balanceOf(address(this));
+    // Deposit stablecoin liquidity
+    router.addLiquidity(
+        1,
+        _underlying,
+        address(this)
+    );
+    //update lpBal and stake
+    increment();
+    stake();
+   emit staked(_underlying);
+} return;
+    }
 }
-// [0x3a4c6d2404b5eb14915041e01f63200a82f4a343000200000000000000000065, GIVEN_IN, 0x6694340fc020c5E6B96567843da2df01b2CE1eb6, 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8, 1, 0x]
