@@ -7,6 +7,7 @@ import "foundry-playground/ERC20TokenFaker.sol";
 import "foundry-playground/FakeERC20.sol";
 import "solmate/tokens/ERC20.sol";
 import "solmate/mixins/ERC4626.sol";
+import "openzeppelin/utils/Strings.sol";
 import {IStargate} from "../interfaces/IStargate.sol";
 
 interface Vm {
@@ -45,17 +46,18 @@ function setUp() public {
     ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).approve(0x53Bf833A5d6c4ddA888F69c22C88C9f356a41614, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     vusd.deposit(1000000000, address(this));
 }
-function testInitialBalance() public {
-    assertEq(1000000000, vusd.balanceOf(address(this)));
-}
-// test whole deposit flow
-function testDeposit() public {
-    uint256 bal = vusd.balanceOf(address(this));
-    vusd.deposit(1000000, address(this));
-    //  assert(vusd.balanceOf(address(this)) > 1);
-    assert(vusd.balanceOf(address(this))  > bal);
-    emit log("deposit");
-}
+// function testInitialBalance() public {
+//     assertEq(1000000000, vusd.balanceOf(address(this)));
+// }
+// // test whole deposit flow
+// function testDeposit() public {
+//     uint256 bal = vusd.balanceOf(address(this));
+//     vusd.deposit(1000000, address(this));
+//     //  assert(vusd.balanceOf(address(this)) > 1);
+//     assert(vusd.balanceOf(address(this))  > bal);
+//     emit log("deposit");
+// }
+
 
 
 // test just reciept of LP tokens (comment out stake)
@@ -67,33 +69,40 @@ function testDeposit() public {
 //     assert(ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).balanceOf(address(vusd)) >= 1);
 // }
 // // test reciept of stg tokens on deposit fast forward
-function testStg() public {
-    vusd.deposit(1000000000000, address(this));
-    vusd.stake();
-    // assert(vusd.balanceOf(address(this)) > 1);
-    // vm.warp(7 days);
-    // vusd.deposit(10000, address(this));
-    vm.roll(9323393);
-    vusd.deposit(1000, address(this));
-    vusd.stake();
-   assert(ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).balanceOf(address(vusd)) > 0);
-}
+// function testRewards() public {
+//     vusd.deposit(1000000000000, address(this));
+//     vusd.stake();
+//     vm.roll(9323393);
+//     vusd.deposit(1000, address(this));
+//     vusd.stake();
+//    assert(ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).balanceOf(address(vusd)) > 0);
+// }
 //change withdraw logic so assets are representing staked balance
-function testWithdraw() public {
-    vusd.withdraw(10000000, address(this), address(this));
-    emit log("withdraw");
-}
-function testLPStats() public {
-    assert(vusd.lpStats() >0);
-}
-
-// function testCompound() public {
-//     fakeSTG = fakeOutERC20(address(0x6694340fc020c5E6B96567843da2df01b2CE1eb6));
-//     fakeSTG._setBalance(address(vusd), 1000000000000000);
-//     uint256 _pb = vusd.lpBal();
-//     vusd.compound();
-//     uint256 _nb = vusd.lpBal();
-//     assert(_nb > _pb);
+// function testWithdraw() public {
+//     vusd.withdraw(10000000, address(this), address(this));
+//     emit log("withdraw");
+// }
+// function testLPStats() public {
+//     assert(vusd.lpStats() >0);
 // }
 
+function testCompound() public {
+    fakeSTG = fakeOutERC20(address(0x6694340fc020c5E6B96567843da2df01b2CE1eb6));
+    fakeSTG._setBalance(address(vusd), 1e18);
+    vusd.setSTG(ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6));
+    uint256 _pb = vusd.lpBal();
+    vusd.compound();
+    uint256 _nb = vusd.lpBal();
+    assert(_nb > _pb);
+}
+function testCompoundWithFee() public {
+    vusd.setFee(10000);
+    fakeSTG = fakeOutERC20(address(0x6694340fc020c5E6B96567843da2df01b2CE1eb6));
+    fakeSTG._setBalance(address(vusd), 1e18);
+    vusd.setSTG(ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6));
+    uint256 _pb = vusd.lpBal();
+    vusd.compound();
+    uint256 _nb = vusd.lpBal();
+    assert(_nb > _pb);
+}
 }

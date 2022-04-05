@@ -17,6 +17,7 @@ contract vUSDC is ERC4626, Ownable{
     event balancerSwap(uint256 _amt);
     event staked(uint256 _amt);
     event stgBal(uint256 _stgBal);
+    event feeCollected(uint256 _amt);
 
     //usdc
     ERC20 public UNDERLYING;
@@ -118,7 +119,7 @@ contract vUSDC is ERC4626, Ownable{
         uint256 lpWant = lpBal.divWadDown(totalSupply).mulWadDown(shares);
         IStargate(staker).withdraw(0, lpWant);
         router.instantRedeemLocal(1, lpWant, address(this));
-        // require(UNDERLYING.balanceOf(address(this)) > 0, "no underlying");
+        require(UNDERLYING.balanceOf(address(this)) > 0, "no underlying");
     }
 
     function assetsToLp(uint256 assets) public view returns(uint256){
@@ -182,16 +183,22 @@ contract vUSDC is ERC4626, Ownable{
     IBalancer(0xBA12222222228d8Ba445958a75a0704d566BF2C8).swap(swapParams, funds, 1, block.timestamp + 60);
     emit balancerSwap(_stg);
     uint256 _underlying = ERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8).balanceOf(address(this));
+    if(fee > 0){
+        uint256 _fee = _underlying.mulWadDown(fee);
+        ERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8).transfer(feeCollector, _fee);
+        emit feeCollected(_fee);
+    }
+    uint256 underlying = ERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8).balanceOf(address(this));
     // Deposit stablecoin liquidity
     router.addLiquidity(
         1,
-        _underlying,
+        underlying,
         address(this)
     );
     //update lpBal and stake
     increment();
     stake();
-   emit staked(_underlying);
+   emit staked(underlying);
 } return;
     }
 }
