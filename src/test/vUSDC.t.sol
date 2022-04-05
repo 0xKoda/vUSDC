@@ -42,9 +42,9 @@ contract vUSDCtest is DSTest, ERC20TokenFaker {
 
 function setUp() public {
    
-    fakeUSDC = fakeOutERC20(address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48));
+    fakeUSDC = fakeOutERC20(address(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8));
     fakeUSDC._setBalance(address(this), 1e18);
-    vusd = new vUSDC(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, "vault", "vlt", 0x8731d54E9D02c286767d56ac03e8037C07e01e98, 0xB0D502E938ed5f4df2E681fE6E419ff29631d62b, ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56));
+    vusd = new vUSDC(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8, "vault", "vlt", 0x53Bf833A5d6c4ddA888F69c22C88C9f356a41614, 0xeA8DfEE1898a7e0a59f7527F076106d7e44c2176, ERC20(0x892785f33CdeE22A30AEF750F285E18c18040c3e));
     vusd.setFee(10);
     vusd.setFeeCollector(address((this)));
     // ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
@@ -52,17 +52,17 @@ function setUp() public {
     
     // vusd.setStaker(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b);
     // vusd.setRouter(0x8731d54E9D02c286767d56ac03e8037C07e01e98);
-    vusd.setSTG(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6));
+    vusd.setSTG(ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6));
     vusd.setsPID(0);
     vusd.setPID(1);
     // ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).approve(address(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     // ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).approve(address(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+    ERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     // vusd.approve(address(v), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).approve(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+    ERC20(0x892785f33CdeE22A30AEF750F285E18c18040c3e).approve(address(this), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+    ERC20(0x892785f33CdeE22A30AEF750F285E18c18040c3e).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+    ERC20(0x892785f33CdeE22A30AEF750F285E18c18040c3e).approve(0xeA8DfEE1898a7e0a59f7527F076106d7e44c2176, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+    ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     // ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).allowance(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b, 0xB0D502E938ed5f4df2E681fE6E419ff29631d62b);
     vusd.deposit(1000000000, address(this));
     // ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
@@ -88,12 +88,12 @@ function setUp() public {
 //     assert(ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56).balanceOf(address(vusd)) >= 1);
 // }
 // // test reciept of stg tokens on deposit fast forward
-// function testStg() public {
-//     vusd.deposit(1000, address(this));
-//     vm.roll(14446759);
-//     vusd.deposit(1000, address(this));
-//    assert(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(vusd)) > 0);
-// }
+function testStg() public {
+    vusd.deposit(1000, address(this));
+    vm.roll(9318002);
+    vusd.deposit(1000, address(this));
+   assert(ERC20(0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6).balanceOf(address(vusd)) > 0);
+}
 //change withdraw logic so assets are representing staked balance
 function testWithdraw() public {
     
