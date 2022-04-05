@@ -40,6 +40,7 @@
     
 
 
+<<<<<<< Updated upstream
 // function setUp() public {
    
 //     fakeUSDC = fakeOutERC20(address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48));
@@ -49,6 +50,16 @@
 //     vusd.setFeeCollector(address((this)));
 //     // ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
 //     // vusd.deposit(10000, address(this));
+=======
+function setUp() public {
+    fakeUSDC = fakeOutERC20(address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48));
+    fakeUSDC._setBalance(address(this), 1e18);
+    vusd = new vUSDC(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, "vault", "vlt", 0x8731d54E9D02c286767d56ac03e8037C07e01e98, 0xB0D502E938ed5f4df2E681fE6E419ff29631d62b, ERC20(0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56));
+    vusd.setFee(10);
+    vusd.setFeeCollector(address((this)));
+    // ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(address(vusd), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+    // vusd.deposit(10000, address(this));
+>>>>>>> Stashed changes
     
 //     // vusd.setStaker(0xB0D502E938ed5f4df2E681fE6E419ff29631d62b);
 //     // vusd.setRouter(0x8731d54E9D02c286767d56ac03e8037C07e01e98);
