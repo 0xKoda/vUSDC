@@ -8,13 +8,15 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {Ownable} from "openzeppelin/access/Ownable.sol";
 import {IRouter} from "./interfaces/IRouter.sol";
 import {IAsset, IBalancer} from "./interfaces/IBalancer.sol";
-// import {ERC20} from "openzeppelin/token/ERC20/ERC20.sol";
+
+ import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 
 
 contract vUSDC is ERC4626, Ownable{
     using FixedPointMathLib for uint256;
     event balancerSwap(uint256 _amt);
     event staked(uint256 _amt);
+    event stgBal(uint256 _stgBal);
 
     //usdc
     ERC20 public UNDERLYING;
@@ -51,6 +53,8 @@ contract vUSDC is ERC4626, Ownable{
         POOLTOKEN.approve(address(staker), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         base_uint = 1000;
         ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).allowance(address(this), address(msg.sender));
+        ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).approve(address(this),  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+        ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).approve(0xeA8DfEE1898a7e0a59f7527F076106d7e44c2176,  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
         UNDERLYING.allowance(address(this), address(router));
         POOLTOKEN.allowance(address(this), address(router));
     }
@@ -65,7 +69,11 @@ contract vUSDC is ERC4626, Ownable{
         return bal.divWadDown(sup);
     }
     function value() public view returns(uint256) {
-       return  lpBal.mulWadDown(lpStats());
+       (uint256 amount, ) = staker.userInfo(
+            0,
+            address(this)
+        );
+        return amount;
     }
     function lpPerShare() public view returns(uint256) {
         return lpBal.divWadDown(totalSupply);
@@ -88,9 +96,13 @@ contract vUSDC is ERC4626, Ownable{
     }
 
     function stake() public {
+        _stgBal = IERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).balanceOf(address(this));
+        emit stgBal(_stgBal);
         uint256 _bal = POOLTOKEN.balanceOf(address(this));
         staker.deposit(0, _bal);
-        _stgBal = ERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).balanceOf(address(this));
+        _stgBal = IERC20(0x6694340fc020c5E6B96567843da2df01b2CE1eb6).balanceOf(address(this));
+        emit stgBal(_stgBal);
+        emit staked(_bal);
     }
      function stgPS() internal view returns (uint256) {
          if (_stgBal == 0) {
