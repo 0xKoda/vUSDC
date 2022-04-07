@@ -3,5 +3,5 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 remappings = ['ds-test/=lib/ds-test/src/']
-
+gas_reports = ["vUSDC"]
 # See more config options https://github.com/gakonst/foundry/tree/master/config
